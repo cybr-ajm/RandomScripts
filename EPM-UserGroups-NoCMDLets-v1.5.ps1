@@ -1,3 +1,12 @@
+#Required RSAT feature
+$RSATModuleName = 'Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0'
+
+#Check if RSAT AD tools (required for dsget/dsquery) is installed, install if not present
+if( (Get-WindowsCapability -Name $RSATModuleName -Online).State -ne 'Installed' ){
+    #install RSAT module
+    Add-WindowsCapability -Name $RSATModuleName -Online
+}
+
 #Target Group(s)
     #Member of at least one
         $TargetGroup1 = "Developers"
