@@ -14,14 +14,12 @@ $userWMI = Get-WMIObject -query "SELECT * FROM Win32_UserAccount WHERE Name='$us
 $domain = $userWMI.Domain
 $pc = [System.DirectoryServices.AccountManagement.PrincipalContext]::new([System.DirectoryServices.AccountManagement.ContextType]::Domain,$domain)
 
-
-
 #Load the user details from AD
 $userDetails = [System.DirectoryServices.AccountManagement.UserPrincipal]::FindByIdentity($pc,$user)
 
 #Get list of group members
 $groupList = $userDetails.getGroups() | Select-Object -ExpandProperty SamAccountName | ft
-$cacheFilePath = "$epmPath$user" + "_groupCache.csv"
+$cacheFilePath = "$epmPath$user" + "_$domain" +"_groupCache.csv"
 $groupList | Out-File $cacheFilePath
 
 #Cache Results to protected file
