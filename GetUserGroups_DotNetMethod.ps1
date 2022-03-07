@@ -1,4 +1,5 @@
-﻿#EPM Path
+﻿
+#EPM Path
 $startTime = date
 $epmPath = "C:\Program Files\CyberArk\Endpoint Privilege Manager\Agent\tmp\scripts\"
 
@@ -6,9 +7,10 @@ $epmPath = "C:\Program Files\CyberArk\Endpoint Privilege Manager\Agent\tmp\scrip
 $am = Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 
 #Create principal context object (current domain/user)
-$pc = [System.DirectoryServices.AccountManagement.PrincipalContext]::new([System.DirectoryServices.AccountManagement.ContextType]::Domain)
+$domain = 'CYBR'
+$pc = [System.DirectoryServices.AccountManagement.PrincipalContext]::new([System.DirectoryServices.AccountManagement.ContextType]::Domain,$domain)
 
-#Get sAMAccoun of current active user
+#Get sAMAccount of current active user
 $user = query session | select-string Active | foreach { -split $_ } | select -index 1
 
 #Load the user details from AD
