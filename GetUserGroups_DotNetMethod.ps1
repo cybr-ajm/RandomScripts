@@ -6,12 +6,15 @@ $epmPath = "C:\Program Files\CyberArk\Endpoint Privilege Manager\Agent\tmp\scrip
 #Load the Account Managment .Net Assembly
 $am = Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 
-#Create principal context object (current domain/user)
-$domain = 'CYBR'
-$pc = [System.DirectoryServices.AccountManagement.PrincipalContext]::new([System.DirectoryServices.AccountManagement.ContextType]::Domain,$domain)
-
 #Get sAMAccount of current active user
 $user = query session | select-string Active | foreach { -split $_ } | select -index 1
+$userWMI = Get-WMIObject -query "SELECT * FROM Win32_UserAccount WHERE Name='$user'"
+
+#Create principal context object (current domain/user)
+$domain = $userWMI.Domain
+$pc = [System.DirectoryServices.AccountManagement.PrincipalContext]::new([System.DirectoryServices.AccountManagement.ContextType]::Domain,$domain)
+
+
 
 #Load the user details from AD
 $userDetails = [System.DirectoryServices.AccountManagement.UserPrincipal]::FindByIdentity($pc,$user)
