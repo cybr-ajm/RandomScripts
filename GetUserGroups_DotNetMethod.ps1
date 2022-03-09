@@ -1,4 +1,20 @@
-﻿
+﻿Function Get-LoggedOnUser {
+ 
+    param (
+     [parameter(Mandatory=$False)]
+     [ValidateNotNullOrEmpty()]$ComputerName
+    )
+     
+    if($ComputerName -eq $Null) {
+        $username = (Get-Process Explorer -IncludeUsername | Where-Object { $_.username -notlike "*SYSTEM" }).username
+    }
+    else {
+ 
+        $username = (Invoke-Command {Get-Process Explorer -IncludeUsername | Where-Object { $_.username -notlike "*SYSTEM" }} -ComputerName $ComputerName).username
+    }
+    return $username
+}
+
 #EPM Path
 $startTime = date
 $epmPath = "C:\Program Files\CyberArk\Endpoint Privilege Manager\Agent\tmp\scripts\"
@@ -7,11 +23,10 @@ $epmPath = "C:\Program Files\CyberArk\Endpoint Privilege Manager\Agent\tmp\scrip
 $am = Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 
 #Get sAMAccount of current active user
-$user = query session | select-string Active | foreach { -split $_ } | select -index 1
-$userWMI = Get-WMIObject -query "SELECT * FROM Win32_UserAccount WHERE Name='$user'"
+$loggedOnUser = Get-LoggedOnUser localhost
+$domain, $user = $loggedOnUser -split '\\'
 
 #Create principal context object (current domain/user)
-$domain = $userWMI.Domain
 $pc = [System.DirectoryServices.AccountManagement.PrincipalContext]::new([System.DirectoryServices.AccountManagement.ContextType]::Domain,$domain)
 
 #Load the user details from AD
