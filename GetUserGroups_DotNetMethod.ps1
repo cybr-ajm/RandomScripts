@@ -10,7 +10,7 @@
     }
     else {
  
-        $username = (Invoke-Command {Get-Process Explorer -IncludeUsername | Where-Object { $_.username -notlike "*SYSTEM" }} -ComputerName $ComputerName).username
+        $username = (Get-Process Explorer -IncludeUsername | Where-Object { $_.username -notlike "*SYSTEM" }).username
     }
     return $username
 }
@@ -43,5 +43,4 @@ $elapsedTime = ($endTime - $startTime).TotalSeconds
 
 Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1001 -EntryType Information -Message "EPM group caching for user $user complete. `n$cacheFilePath updated.`nElapsed Time: $elapsedTime seconds" -Category 1 -RawData 10,20
 exit 0;
-
 
