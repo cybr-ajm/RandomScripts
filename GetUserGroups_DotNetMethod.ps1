@@ -23,38 +23,41 @@ $epmPath = "C:\Program Files\CyberArk\Endpoint Privilege Manager\Agent\tmp\scrip
 $am = Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 
 #Get sAMAccount of current active user
-$loggedOnUser = Get-LoggedOnUser localhost
+$loggedOnUsers = Get-LoggedOnUser localhost
 
-if($loggedOnUser -ne $null){
+foreach($loggedOnUser in $loggedOnUsers){
+    
+    try{
+        if($loggedOnUser -ne $null){
+    
+            $domain, $user = $loggedOnUser -split '\\'
+            write-host $domain$user
 
-    $domain, $user = $loggedOnUser -split '\\'
+            #Create principal context object (current domain/user)
+            $pc = [System.DirectoryServices.AccountManagement.PrincipalContext]::new([System.DirectoryServices.AccountManagement.ContextType]::Domain,$domain)
 
-    #Create principal context object (current domain/user)
-    $pc = [System.DirectoryServices.AccountManagement.PrincipalContext]::new([System.DirectoryServices.AccountManagement.ContextType]::Domain,$domain)
+            #Load the user details from AD
+            $userDetails = [System.DirectoryServices.AccountManagement.UserPrincipal]::FindByIdentity($pc,$user)
 
-    #Load the user details from AD
-    $userDetails = [System.DirectoryServices.AccountManagement.UserPrincipal]::FindByIdentity($pc,$user)
+            #Get list of group members
+            $groupList = $userDetails.getGroups() | Select-Object -ExpandProperty SamAccountName
+            $cacheFilePath = "$epmPath$user" + "_$domain" +"_groupCache.csv"
+            if (test-path -Path $cacheFilePath -PathType Leaf) {Clear-Content $cacheFilePath}
 
-    #Get list of group members
-    $groupList = $userDetails.getGroups() | Select-Object -ExpandProperty SamAccountName
-    $cacheFilePath = "$epmPath$user" + "_$domain" +"_groupCache.csv"
-    Clear-Content $cacheFilePath
+            foreach($grp in $groupList){
+                $fullGrpName = "$domain\$grp"
+                $fullGrpName | out-file $cacheFilePath -Append
+                }
 
-    foreach($grp in $groupList){
-        $fullGrpName = "$domain\$grp"
-        $fullGrpName | out-file $cacheFilePath -Append
+            #Cache Results to protected file
+            $endTime = date
+            $elapsedTime = ($endTime - $startTime).TotalSeconds
+            Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1001 -EntryType Information -Message "EPM group caching for user $user complete. `n$cacheFilePath updated.`nElapsed Time: $elapsedTime seconds" -Category 1 -RawData 10,20
+            }
+        }catch{
+            Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1001 -EntryType Information -Message "EPM group caching for user $user failed." -Category 1 -RawData 10,20
         }
 
-    #Cache Results to protected file
-    $endTime = date
-    $elapsedTime = ($endTime - $startTime).TotalSeconds
-
-    Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1001 -EntryType Information -Message "EPM group caching for user $user complete. `n$cacheFilePath updated.`nElapsed Time: $elapsedTime seconds" -Category 1 -RawData 10,20
-    exit 0;
-} else{
-
-    Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1001 -EntryType Information -Message "EPM group caching did not complete, could not identify logged on user" -Category 1 -RawData 10,20
-    exit 0;
 }
 
 

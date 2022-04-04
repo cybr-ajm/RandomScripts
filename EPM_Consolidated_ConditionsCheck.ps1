@@ -22,6 +22,7 @@
     Author: adam.markert@cyberark.com
     Modified date: 2022-04-01
     Version 1.0 - Initial release
+    Version 1.1 - Added additional flexibility to allow selection of any combination of conditions, set group checking to $false by default.
 #>
 
 
@@ -36,7 +37,7 @@ $performOUCheck = $true
 $requiredOU = "OU=EPM Workstations,OU=CyberArk,DC=CYBR,DC=COM"
 
 ### Variables for Group Membership Check ###
-$performGroupCheck = $true
+$performGroupCheck = $false
 $epmPath = "C:\Program Files\CyberArk\Endpoint Privilege Manager\Agent\tmp\scripts\"
 #Target Group(s)
     #COLLECTION 1 - Member of at least one
@@ -169,7 +170,7 @@ if($performWMICheck){
 if($performOUCheck){
     if(!(Get-OUStatus)){
         Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1020 -EntryType Information -Message "EPM Policy Checks Complete - OU check Failed - Exiting 1" -Category 1 -RawData 10,20
-    exit 1;
+        exit 1;
     }
 }
 
@@ -177,8 +178,9 @@ if($performGroupCheck){
     if(!(Get-GroupStatus)){
         Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1020 -EntryType Information -Message "EPM Policy Checks Complete - Group check Failed - Exiting 1" -Category 1 -RawData 10,20
         exit 1;
-    }else{
-        Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1020 -EntryType Information -Message "EPM Policy Checks Complete - All checks passed - Exiting 0" -Category 1 -RawData 10,20
-        exit 0;
     }
 }
+
+#If none of the enabled checks above fails, then exit 0.
+Write-EventLog -LogName "Application" -Source "CyberArk EPM" -EventID 1020 -EntryType Information -Message "EPM Policy Checks Complete - All checks passed - Exiting 0" -Category 1 -RawData 10,20
+exit 0;
